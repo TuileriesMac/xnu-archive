@@ -139,5 +139,7 @@ STUB(kern_pbufpool_free_batch);
 STUB(kern_pbufpool_get_context);
 STUB(kern_pbufpool_get_memory_info);
 STUB(kern_segment_get_index);
+STUB(bpf_tap_packet_out);
+STUB(bpf_tap_packet_in);
 #undef STUB
 #endif /* !SKYWALK */
