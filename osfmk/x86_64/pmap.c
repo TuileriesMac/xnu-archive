@@ -3464,3 +3464,43 @@ pmap_load_image4_trust_cache(struct pmap_image4_trust_cache __unused *trust_cach
 	return PMAP_TC_UNKNOWN_FORMAT;
 }
 
+int
+pmap_is_trust_cache_loaded(void)
+{
+	// Unsupported on this architecture.
+    return 0;
+}
+
+int
+pmap_lookup_in_loaded_trust_caches(void)
+{
+    // Unsupported on this architecture.
+    return 0;
+}
+
+int
+pmap_lookup_in_static_trust_cache(void)
+{
+    // Unsupported on this architecture.
+    return 0;
+}
+
+int
+pmap_in_ppl(void)
+{
+    // Unsupported on this architecture.
+    return 0;
+}
+
+int
+pmap_claim_reserved_ppl_page(void)
+{
+    // Unsupported on this architecture.
+    return 0;
+}
+
+void
+pmap_free_reserved_ppl_page(void)
+{
+    // Unsupported on this architecture.
+}

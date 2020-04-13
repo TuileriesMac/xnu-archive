@@ -815,6 +815,13 @@ extern pmap_tc_ret_t pmap_load_image4_trust_cache(
 	vm_size_t img4_manifest_actual_len,
 	bool dry_run);
 
+extern int pmap_is_trust_cache_loaded(void);
+extern int pmap_lookup_in_loaded_trust_caches(void);
+extern int pmap_lookup_in_static_trust_cache(void);
+extern int pmap_in_ppl(void);
+extern int pmap_claim_reserved_ppl_page(void);
+extern void pmap_free_reserved_ppl_page(void);
+
 extern void pmap_ledger_alloc_init(size_t);
 extern ledger_t pmap_ledger_alloc(void);
 extern void pmap_ledger_free(ledger_t);
