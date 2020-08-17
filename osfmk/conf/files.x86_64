@@ -125,3 +125,31 @@ osfmk/x86_64/xcpm/xcpm_config.c     standard
 
 osfmk/i386/panic_hooks.c	standard
 osfmk/x86_64/machine_remote_time.c 		optional config_mach_bridge_send_time
+
+# Opcode Emulation
+osfmk/opemu/opemu.c          standard
+osfmk/opemu/module.c         standard
+osfmk/opemu/ins/aes.c        standard
+osfmk/opemu/ins/aesins.c     standard
+osfmk/opemu/ins/avx.c        standard
+osfmk/opemu/ins/bmi.c        standard
+osfmk/opemu/ins/f16c.c       standard
+osfmk/opemu/ins/fma.c        standard
+osfmk/opemu/ins/fpins.c      standard
+osfmk/opemu/ins/half.c       standard
+osfmk/opemu/ins/pcmpstr.c    standard
+osfmk/opemu/ins/vgather.c    standard
+osfmk/opemu/ins/vsse.c       standard
+osfmk/opemu/ins/vsse2.c      standard
+osfmk/opemu/ins/vsse3.c      standard
+osfmk/opemu/ins/vsse41.c     standard
+osfmk/opemu/ins/vsse42.c     standard
+osfmk/opemu/ins/vssse3.c     standard
+
+# udis86
+osfmk/udis86/libudis86/decode.c      standard
+#osfmk/udis86/libudis86/syn-att.c    standard
+osfmk/udis86/libudis86/itab.c        standard
+osfmk/udis86/libudis86/syn-intel.c   standard
+osfmk/udis86/libudis86/syn.c         standard
+osfmk/udis86/libudis86/udis86.c      standard
