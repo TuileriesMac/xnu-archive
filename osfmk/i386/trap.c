@@ -689,9 +689,11 @@ kernel_trap(
 		fpSSEexterrflt();
 		return;
 
+	/*
 	case T_INVALID_OPCODE:
 		fpUDflt(kern_ip);
 		goto debugger_entry;
+	*/
 
 	case T_DEBUG:
 		if ((saved_state->isf.rflags & EFL_TF) == 0 && NO_WATCHPOINTS) {
@@ -769,11 +771,46 @@ FALL_THROUGH:
 		/*
 		 * Check thread recovery address also.
 		 */
+
+		/*
 		if (thread != THREAD_NULL && thread->recover) {
 			set_recovery_ip(saved_state, thread->recover);
 			thread->recover = 0;
 			return;
 		}
+		*/
+
+		/****************** RDMSR/WRMSR Patch Start ******************/
+	    	vm_offset_t addr;
+	    	boolean_t exists;
+	    	addr = saved_state -> isf.rip;
+	    	exists = vm_map_check_protection(kernel_map, addr, addr + 2, VM_PROT_READ);
+	    	if (exists) {
+	      		uint16_t opcode;
+	
+	      		opcode = * (uint16_t * ) addr;
+	      		if (opcode == 0x320f) {
+	        		printf("[MSR] detected invalid rdmsr(%16x) at 0x%16x\n",
+	          		(unsigned int) saved_state -> rcx, (unsigned int) addr);
+	        		saved_state -> rdx = 0;
+	        		saved_state -> rax = 0;
+	        		set_recovery_ip(saved_state, addr + 2);
+	        		return;
+	      		} else if (opcode == 0x300f) {
+	        		printf("[MSR] detected invalid wrmsr(%16x, %16x:%16x) at 0x%16x\n",
+	          		(unsigned int) saved_state -> rcx, (unsigned int) saved_state -> rdx, (unsigned int) saved_state -> rax,
+	          		(unsigned int) addr);
+	        		set_recovery_ip(saved_state, addr + 2);
+	        		return;
+	      		}
+	    	} else {
+	      		printf("warning: invalid kernel ip, won't attempt to handle trap\n");
+		}
+		/******************* RDMSR/WRMSR Patch END *******************/
+
+	case T_INVALID_OPCODE:
+		opemu_ktrap(state, lo_spp);
+	 	return;
 	/*
 	 * Unanticipated page-fault errors in kernel
 	 * should not happen.
@@ -889,6 +926,40 @@ panic_trap(x86_saved_state64_t *regs, uint32_t pl, kern_return_t fault_result)
 #if CONFIG_DTRACE
 extern kern_return_t dtrace_user_probe(x86_saved_state_t *);
 #endif
+
+/****************** sysenter/sysexit Patch Start ******************/
+/*** 32-bit Only ***/
+void opemu_sysenter(x86_saved_state_t * saved_state);
+void opemu_sysenter(x86_saved_state_t * saved_state) {
+	if (is_saved_state32(saved_state)) {
+ 		vm_offset_t addr;
+    		x86_saved_state32_t * regs;
+    		regs = saved_state32(saved_state);
+    		addr = regs -> eip;
+    		uint16_t opcode = * (uint16_t * ) addr;
+
+    		//sysenter
+    		if (opcode == 0x340f) {
+      			regs -> eip = regs -> edx;
+      			regs -> uesp = regs -> ecx;
+      			if ((signed int) regs -> eax < 0) {
+        			mach_call_munger(saved_state);
+      			} else {
+        			unix_syscall(saved_state);
+      			}
+      			return;
+    		}
+
+    		//sysexit
+    		if (opcode == 0x350f) {
+      			regs -> eip = regs -> edx;
+      			regs -> uesp = regs -> ecx;
+      			thread_exception_return();
+      			return;
+    		}
+	}
+}
+/******************* sysenter/sysexit Patch END *******************/
 
 #if DEBUG
 uint32_t fsigs[2];
@@ -1029,6 +1100,8 @@ user_trap(
 		break;
 
 	case T_INVALID_OPCODE:
+		opemu_sysenter(saved_state);
+		opemu_utrap(saved_state);
 #if !defined(RC_HIDE_XNU_J137)
 		fpUDflt(rip);   /* May return from exception directly */
 #endif
