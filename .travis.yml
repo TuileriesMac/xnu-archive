@@ -1,0 +1,75 @@
+language: c
+os: osx
+osx_image: xcode10.3
+
+git:
+  depth: false
+  submodules: true
+
+before_script:
+  - brew install p7zip
+  - export FILE_LOCATION="README.md"
+  - export SDKPATH="$(xcrun --sdk macosx --show-sdk-path)"
+  - export TOOLCHAINPATH="$(xcode-select -p)/Toolchains/XcodeDefault.xctoolchain"
+  - export ARCHS="x86_64"
+  - export SDKROOT="macosx10.14"
+  - export ARCH_CONFIGS="X86_64"
+  - export KERNEL_CONFIGS="DEBUG"
+  - export XCODE_APPLICATION_NAME="Xcode-10.3.app"
+  - export COMMIT_SHA_SHORT="$(echo $TRAVIS_COMMIT | cut -c 1-7)"
+  - export FILENAME_PUSH="$(echo xnu_build_$COMMIT_SHA_SHORT.zip)"
+
+script:
+  - cd dtrace
+  - xcodebuild install -target ctfconvert -target ctfdump -target ctfmerge -UseModernBuildSystem=NO
+    SRCROOT="${PWD}" OBJROOT="${PWD}/obj" SYMROOT="${PWD}/sym" DSTROOT="${PWD}/dst"
+  - sudo ditto "${PWD}/dst/Applications/${XCODE_APPLICATION_NAME}/Contents/Developer/Toolchains/XcodeDefault.xctoolchain"
+    "${TOOLCHAINPATH}"
+  - cd ..
+  - cd AvailabilityVersions
+  - make install SRCROOT="${PWD}" DSTROOT="${PWD}/dst"
+  - sudo ditto "${PWD}/dst/usr/local" "${SDKPATH}/usr/local"
+  - cd ..
+  - cd libplatform
+  - sudo ditto "${PWD}/include" "${SDKPATH}/usr/local/include"
+  - sudo ditto "${PWD}/private"  "${SDKPATH}/usr/local/include"
+  - cd ..
+  - make installhdrs SRCROOT="${PWD}" OBJROOT="${PWD}/BUILD.hdrs/obj" SYMROOT="${PWD}/BUILD.hdrs/sym"
+    DSTROOT="${PWD}/BUILD.hdrs/dst"
+  - xcodebuild installhdrs -project libsyscall/Libsyscall.xcodeproj -sdk macosx -UseModernBuildSystem=NO
+    ARCHS="x86_64" SRCROOT="${PWD}/libsyscall" OBJROOT="${PWD}/BUILD.hdrs/obj" SYMROOT="${PWD}/BUILD.hdrs/sym"
+    DSTROOT="${PWD}/BUILD.hdrs/dst"
+  - sudo chown -R root:wheel BUILD.hdrs/dst/
+  - sudo ditto BUILD.hdrs/dst "${SDKPATH}"
+  - cd libdispatch
+  - xcodebuild install -project libdispatch.xcodeproj -target libfirehose_kernel -sdk
+    macosx -UseModernBuildSystem=NO SRCROOT="${PWD}" OBJROOT="${PWD}/obj" SYMROOT="${PWD}/sym"
+    DSTROOT="${PWD}/dst"
+  - sudo ditto "${PWD}/dst/usr/local" "${SDKPATH}/usr/local"
+  - cd ..
+  - cd osfmk/udis86
+  - "./autogen.sh && ./configure && make"
+  - cd ../..
+  - bash -c "${PWD}/silentbuild.sh"
+
+before_deploy:
+  - mkdir release && mkdir ExtensionsTemp
+  - sudo cp -R /System/Library/Extensions "${PWD}/ExtensionsTemp"
+  - cp BUILD/obj/DEBUG_X86_64/kernel.debug ${PWD}/release/kernel
+  - sudo rm -rf "${PWD}/ExtensionsTemp/System.kext"
+  - sudo cp -R BUILD.syskext/System/Library/Extensions/System.kext "${PWD}/ExtensionsTemp"
+  - sudo ditto BUILD.syskext/System/Library/Extensions/System.kext "${PWD}/release"
+  - kextcache -q -z -a x86_64 -l -n -c "${PWD}/release/prelinkedkernel" -K "${PWD}/release/kernel"
+   "${PWD}/ExtensionsTemp"
+  - sudo chown -R root:wheel release
+  - sudo 7z a "$FILENAME_PUSH" ./release/{*,.[!.]*}
+
+deploy:
+  provider: releases
+  file_glob: true
+  skip_cleanup: true
+  api_key:
+    secure: Pvjk4ceDItdNgMpwgAPRJjj3v9qW7vZNo69pIh8fwubK93jAkWSzl1ngJ+uAcFns2ERmgzq7J0pv0WSMr9Y2nvZYq3aMpLcfqN80IlICfKR1WAOh1DQDMsM7BiZ98aMuanDigz6/ty483ls/rLTBEFBFmvXv4SLOOAgHxHUXMvpBAYVjcUFzSodl/PtMLDZo8y7vg92Gfu7R/cv+DP1/7xKpK/jnIuMfNFSrZ6ifc+aYJkDkKaZHn+vDSB6jaZBIX85fBnr+Iv1GPcpdHGdl/5PxvmRktnsqeIWhyhfHNvcYTMZP1ynUb78mG6tBUFyzNvZIGOBavmZcji0oN5joyc+914ldag86qoZv6qSkX25MXFVGEpdG+xJAjKaBRJVYqrIxCEjLlzeSv5RWRA9f0wAfDcJuz43o6d/kfblH8fh+JzIRQVNg2bd01wOKtGcj3mhOyUQg7RPLEa40Mo4XgxttHkN8jel+8fN0NhK0kBFHObxTARkwUBCvBSa+2ovn9IEHIHrf9X147Kteml4sMuhXPOaMcmp8VFTu6DaUDltT3I0aNRDLLzjNbTiNsHqdlvenPfS5wTnRzmavBQc/8dlHcMR7xEC4+DBGdpJyWQapIOnwNyUEZNeUDZb+1hUxelhPIQ4nyOVos1azekq2A2YLA9TzqbkijUEpqcMb74c=
+  file: ${HOME}/build/${TRAVIS_REPO_SLUG}/xnu_build_*.zip
+  on:
+    tags: true
