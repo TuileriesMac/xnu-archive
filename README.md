@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/TuileriesMac/xnu.svg?branch=master)](https://travis-ci.com/TuileriesMac/xnu)
+
 What is XNU?
 ===========
 
@@ -35,9 +37,9 @@ Here is the syntax:
 
 Where:
 
-  * \<sdkroot>: path to macOS SDK on disk. (defaults to `/`)
-  * \<variant>: can be `debug`, `development`, `release`, `profile` and configures compilation flags and asserts throughout kernel code.
-  * \<arch>   : can be valid arch to build for. (E.g. `X86_64`)
+  * `<sdkroot>`: path to macOS SDK on disk. (defaults to `/`)
+  * `<variant>`: can be `debug`, `development`, `release`, `profile` and configures compilation flags and asserts throughout kernel code.
+  * `<arch>`   : can be valid arch to build for. (E.g. `X86_64`)
 
 To build a kernel for the same architecture as running OS, just type
 
@@ -74,12 +76,12 @@ Define architectures in your environment or when running a make command.
 Other makefile options
 ----------------------
 
- * $ make MAKEJOBS=-j8    # this will use 8 processes during the build. The default is 2x the number of active CPUS.
- * $ make -j8             # the standard command-line option is also accepted
- * $ make -w              # trace recursive make invocations. Useful in combination with VERBOSE=YES
- * $ make BUILD_LTO=0      # build without LLVM Link Time Optimization
- * $ make REMOTEBUILD=user@remotehost # perform build on remote host
- * $ make BUILD_JSON_COMPILATION_DATABASE=1 # Build Clang JSON Compilation Database
+ * `$ make MAKEJOBS=-j8    # this will use 8 processes during the build. The default is 2x the number of active CPUS.`
+ * `$ make -j8             # the standard command-line option is also accepted`
+ * `$ make -w              # trace recursive make invocations. Useful in combination with VERBOSE=YES`
+ * `$ make BUILD_LTO=0      # build without LLVM Link Time Optimization`
+ * `$ make REMOTEBUILD=user@remotehost # perform build on remote host`
+ * `$ make BUILD_JSON_COMPILATION_DATABASE=1 # Build Clang JSON Compilation Database`
 
 The XNU build system can optionally output color-formatted build output. To enable this, you can either
 set the `XNU_LOGCOLORS` environment variable to `y`, or you can pass `LOGCOLORS=y` to the make command.
@@ -114,8 +116,6 @@ To build a kernelcache you can use the following mechanisms:
 
         $ kextcache -q -z -a x86_64 -l -n -c /var/tmp/kernelcache.test -K /var/tmp/kernel.test /System/Library/Extensions
 
-
-
 Running KernelCache on Target machine
 =====================================
 
@@ -143,9 +143,6 @@ Following are the steps to get such a setup:
      The `--nextonly` flag specifies that use the `boot.plist` configs only for one boot.
      So if the kernel panic's you can easily power reboot and recover back to original kernel.
 
-
-
-
 Creating tags and cscope
 ========================
 
@@ -155,18 +152,17 @@ Set up your build environment and from the top directory, run:
     $ make TAGS     # this will build etags
     $ make cscope   # this will build cscope database
 
-
 Code Style
 ==========
 
 Source files can be reformatted to comply with the xnu code style using the "restyle" make target invoked from the
 top-level project directory.
 
-   $ make restyle      # re-format all source files to be xnu code style conformant.
+   `$ make restyle      # re-format all source files to be xnu code style conformant.`
 
 Compliance can be checked using the "checkstyle" make target.
 
-   $ make checkstyle   # Check all relevant source files for xnu code style conformance.
+   `$ make checkstyle   # Check all relevant source files for xnu code style conformance.`
 
 How to install a new header file from XNU
 =========================================
@@ -276,15 +272,20 @@ want to export a function only to kernel level but not user level.
 	Private Interfaces. These are visible within xnu and
 	exposed in user/kernel headers installed within the AppleInternal
 	"PrivateHeaders" sections of the System and Kernel frameworks.
+	
     b. `KERNEL_PRIVATE` : If defined, enclosed code is available to all of xnu
 	kernel and Apple internal kernel extensions and omitted from user
 	headers.
+	
     c. `BSD_KERNEL_PRIVATE` : If defined, enclosed code is visible exclusively
 	within the xnu/bsd module.
+	
     d. `MACH_KERNEL_PRIVATE`: If defined, enclosed code is visible exclusively
 	within the xnu/osfmk module.
+	
     e. `XNU_KERNEL_PRIVATE`: If defined, enclosed code is visible exclusively
 	within xnu.
+	
     f. `KERNEL` :  If defined, enclosed code is available within xnu and kernel
        extensions and is not visible in user level header files.  Only the
        header files installed in following paths will have the code -
@@ -301,12 +302,14 @@ Conditional compilation
     characterstics that will vary only based on the CPU architecture being
     targeted, use this option. Prefer checking for features of the
     architecture (e.g. `__LP64__`, `__LITTLE_ENDIAN__`, etc.).
+    
     b. *New Features* If the code you are guarding, when taken together,
     implements a feature, you should define a new feature in `config/MASTER`
     and use the resulting `CONFIG` preprocessor token (e.g. for a feature
     named `config_virtual_memory`, check for `#if CONFIG_VIRTUAL_MEMORY`).
     This practice ensures that existing features may be brought to other
     platforms by simply changing a feature switch.
+    
     c. *Existing Features* You can use existing features if your code is
     strongly tied to them (e.g. use `SECURE_KERNEL` if your code implements
     new functionality that is exclusively relevant to the trusted kernel and
@@ -316,15 +319,8 @@ It is recommended that you avoid compiling based on the target platform. `xnu`
 does not define the platform macros from `TargetConditionals.h`
 (`TARGET_OS_OSX`, `TARGET_OS_IOS`, etc.).
 
-
 There is a `TARGET_OS_EMBEDDED` macro, but this should be avoided as it is in
 general too broad a definition for most functionality.
-
-How to add a new syscall
-========================
-
-
-
 
 Testing the kernel
 ==================
@@ -340,6 +336,7 @@ XNU kernel has multiple mechanisms for testing.
 
         xnu/osfmk/tests/     # For testing mach based kernel structures and apis.
         bsd/tests/           # For testing BSD interfaces.
+	
     Please follow the documentation at [osfmk/tests/README.md](osfmk/tests/README.md)
 
   * User level tests: The `tools/tests/` directory holds all the tests that verify syscalls and other features of the xnu kernel.
@@ -348,6 +345,7 @@ XNU kernel has multiple mechanisms for testing.
         $ make RC_ProjectName=xnu_tests SDKROOT=/path/to/SDK
 
     These tests are individual programs that can be run from Terminal and report tests status by means of std posix exit codes (0 -> success) and/or stdout.
+    
     Please read detailed documentation in [tools/tests/unit_tests/README.md](tools/tests/unit_tests/README.md)
 
 
