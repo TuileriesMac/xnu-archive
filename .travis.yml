@@ -57,8 +57,9 @@ before_deploy:
   - sudo cp -R /System/Library/Extensions "${PWD}/ExtensionsTemp"
   - cp BUILD/obj/DEBUG_X86_64/kernel.debug ${PWD}/release/kernel
   - sudo rm -rf "${PWD}/ExtensionsTemp/System.kext"
-  - sudo cp -R BUILD.syskext/System/Library/Extensions/System.kext "${PWD}/ExtensionsTemp"
+  - sudo ditto BUILD.syskext/System/Library/Extensions/System.kext "${PWD}/ExtensionsTemp"
   - sudo ditto BUILD.syskext/System/Library/Extensions/System.kext "${PWD}/release/System.kext"
+  - sudo ditto BUILD.syskext/System/Library/Frameworks/Kernel.framework "${PWD}/release/Kernel.framework"
   - kextcache -q -z -a x86_64 -l -n -c "${PWD}/release/prelinkedkernel" -K "${PWD}/release/kernel"
    "${PWD}/ExtensionsTemp"
   - sudo chmod +x release/prelinkedkernel
