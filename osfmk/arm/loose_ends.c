@@ -705,3 +705,76 @@ kdp_register_callout(kdp_callout_fn_t fn, void *arg)
 #pragma unused(fn,arg)
 }
 #endif
+
+static lck_grp_t       xcpm_lck_grp;
+static lck_grp_attr_t  xcpm_lck_grp_attr;
+static lck_attr_t      xcpm_lck_attr;
+static lck_spin_t      xcpm_lock;
+
+void xcpm_bootstrap(void);
+void xcpm_mbox_lock(void);
+void xcpm_mbox_unlock(void);
+uint32_t xcpm_bios_mbox_cmd_read(uint32_t cmd);
+uint32_t xcpm_bios_mbox_cmd_unsafe_read(uint32_t cmd);
+void xcpm_bios_mbox_cmd_write(uint32_t cmd, uint32_t data);
+boolean_t xcpm_is_hwp_enabled(void);
+
+void
+xcpm_bootstrap(void)
+{
+	lck_grp_attr_setdefault(&xcpm_lck_grp_attr);
+	lck_grp_init(&xcpm_lck_grp, "xcpm", &xcpm_lck_grp_attr);
+	lck_attr_setdefault(&xcpm_lck_attr);
+	lck_spin_init(&xcpm_lock, &xcpm_lck_grp, &xcpm_lck_attr);
+}
+
+void
+xcpm_mbox_lock(void)
+{
+	lck_spin_lock(&xcpm_lock);
+}
+
+void
+xcpm_mbox_unlock(void)
+{
+	lck_spin_unlock(&xcpm_lock);
+}
+
+static uint32_t __xcpm_state[64] = {};
+
+uint32_t
+xcpm_bios_mbox_cmd_read(uint32_t cmd)
+{
+	uint32_t reg;
+	boolean_t istate = ml_set_interrupts_enabled(FALSE);
+	xcpm_mbox_lock();
+	reg = xcpm_bios_mbox_cmd_unsafe_read(cmd);
+	xcpm_mbox_unlock();
+	ml_set_interrupts_enabled(istate);
+	return reg;
+}
+
+uint32_t
+xcpm_bios_mbox_cmd_unsafe_read(uint32_t cmd)
+{
+	return __xcpm_state[cmd % (sizeof(__xcpm_state) / sizeof(__xcpm_state[0]))];
+}
+
+void
+xcpm_bios_mbox_cmd_write(uint32_t cmd, uint32_t data)
+{
+	uint32_t idx = cmd % (sizeof(__xcpm_state) / sizeof(__xcpm_state[0]));
+	idx &= ~0x1;
+
+	boolean_t istate = ml_set_interrupts_enabled(FALSE);
+	xcpm_mbox_lock();
+	__xcpm_state[idx] = data;
+	xcpm_mbox_unlock();
+	ml_set_interrupts_enabled(istate);
+}
+
+boolean_t
+xcpm_is_hwp_enabled(void)
+{
+	return FALSE;
+}
