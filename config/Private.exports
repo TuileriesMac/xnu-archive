@@ -340,6 +340,9 @@ _current_persona_get
 _persona_put
 _pffinddomain:_pffinddomain_old
 _pffindproto:_pffindproto_old
+_pmap_claim_reserved_ppl_page
+_pmap_free_reserved_ppl_page
+_pmap_in_ppl
 _port_name_to_task
 _port_name_to_thread
 _post_sys_powersource
