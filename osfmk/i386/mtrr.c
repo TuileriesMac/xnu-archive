@@ -319,6 +319,16 @@ mtrr_init(void)
  * barrier synchronization among all processors. This function is
  * called from the rendezvous IPI handler, and mtrr_update_cpu().
  */
+
+// Bronzovka: For artifacts: i fixed here - work or don't work :)))
+#define    PATENTRY(n, type)    (type << ((n) * 8))
+#define    PAT_UC        0x0ULL
+#define    PAT_WC        0x1ULL
+#define    PAT_WT        0x4ULL
+#define    PAT_WP        0x5ULL
+#define    PAT_WB        0x6ULL
+#define    PAT_UCMINUS    0x7ULL
+
 static void
 mtrr_update_action(void * cache_control_type)
 {
@@ -354,8 +364,11 @@ mtrr_update_action(void * cache_control_type)
 		 * The five high-order bits of each field are reserved, and must be set to all 0s."
 		 * So, we zero-out the high 5 bits of the PA6 entry here:
 		 */
-		pat &= ~(0xFFULL << 48);
-		pat |=  (0x01ULL << 48);
+		/* We change WT to WC. Leave all other entries the default values. */
+		pat != PATENTRY(0, PAT_WB) | PATENTRY(1, PAT_WC) |
+		PATENTRY(2, PAT_UCMINUS) | PATENTRY(3, PAT_UC) |
+		PATENTRY(4, PAT_WB) | PATENTRY(5, PAT_WC) |
+		PATENTRY(6, PAT_UCMINUS) | PATENTRY(7, PAT_UC);
 		wrmsr64(MSR_IA32_CR_PAT, pat);
 		DBG("CPU%d PAT: is  0x%016llx\n",
 		    get_cpu_number(), rdmsr64(MSR_IA32_CR_PAT));
@@ -704,8 +717,11 @@ pat_init(void)
 	DBG("CPU%d PAT: was 0x%016llx\n", get_cpu_number(), pat);
 
 	/* Change PA6 attribute field to WC if required */
-	if ((pat & (0x07ULL << 48)) != (0x01ULL << 48)) {
-		mtrr_update_action(CACHE_CONTROL_PAT);
+	if ((pat = PATENTRY(0, PAT_WB) | PATENTRY(1, PAT_WC) |
+	PATENTRY(2, PAT_UCMINUS) | PATENTRY(3, PAT_UC) |
+	PATENTRY(4, PAT_WB) | PATENTRY(5, PAT_WC) |
+	PATENTRY(6, PAT_UCMINUS) | PATENTRY(7, PAT_UC))) {
+	mtrr_update_action(CACHE_CONTROL_PAT);
 	}
 	ml_set_interrupts_enabled(istate);
 }
