@@ -121,8 +121,6 @@ osfmk/x86_64/monotonic_x86_64.c optional monotonic
 osfmk/i386/startup64.c		standard
 osfmk/x86_64/idt64.s		standard
 
-osfmk/x86_64/xcpm/xcpm_config.c     standard
-
 osfmk/i386/panic_hooks.c	standard
 osfmk/x86_64/machine_remote_time.c 		optional config_mach_bridge_send_time
 
