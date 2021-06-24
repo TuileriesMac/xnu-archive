@@ -2861,7 +2861,7 @@ waitq_assert_wait64_locked(struct waitq *waitq,
 	assert(!thread->started || thread == current_thread());
 
 	if (thread->waitq != NULL) {
-		panic("thread already waiting on %p", thread->waitq);
+		kprintf("thread already waiting on %p", thread->waitq);
 	}
 
 	if (waitq_is_set(waitq)) {
