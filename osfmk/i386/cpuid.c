@@ -754,7 +754,7 @@ cpuid_set_generic_info(i386_cpu_info_t *info_p)
 	 * and bracket this with the approved procedure for reading the
 	 * the microcode version number a.k.a. signature a.k.a. BIOS ID
 	 */
-	wrmsr64(MSR_IA32_BIOS_SIGN_ID, 0);
+	// wrmsr64(MSR_IA32_BIOS_SIGN_ID, 0);
 	cpuid_fn(1, reg);
 	info_p->cpuid_microcode_version = 186;
 	    // (uint32_t) (rdmsr64(MSR_IA32_BIOS_SIGN_ID) >> 32);
