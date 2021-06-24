@@ -241,6 +241,7 @@ tsc_init(void)
 
 		break;
 	}
+#if 0
 	case CPUFAMILY_INTEL_PENRYN: {
 		uint64_t        prfsts;
 
@@ -250,6 +251,7 @@ tsc_init(void)
 
 		busFreq = EFI_get_frequency("FSBFrequency");
 	}
+#endif
 	}
 
 	if (busFreq != 0) {

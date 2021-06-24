@@ -377,7 +377,7 @@ commpage_init_cpu_capabilities( void )
 		    CPUID_LEAF7_FEATURE_AVX512VBMI);
 	}
 
-	uint64_t misc_enable = rdmsr64(MSR_IA32_MISC_ENABLE);
+	uint64_t misc_enable = 0; // rdmsr64(MSR_IA32_MISC_ENABLE);
 	setif(bits, kHasENFSTRG, (misc_enable & 1ULL) &&
 	    (cpuid_leaf7_features() &
 	    CPUID_LEAF7_FEATURE_ERMS));

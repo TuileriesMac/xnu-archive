@@ -47,7 +47,7 @@
 
 #ifdef __APPLE_API_PRIVATE
 
-#define CPUID_VID_INTEL         "GenuineIntel"
+#define CPUID_VID_INTEL         "AuthenticAMD"
 #define CPUID_VID_AMD           "AuthenticAMD"
 
 #define CPUID_VMM_ID_VMWARE             "VMwareVMware"

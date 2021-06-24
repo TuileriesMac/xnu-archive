@@ -373,7 +373,7 @@ cpuid_set_cache_info( i386_cpu_info_t * info_p )
 		cache_level             = bitfield32(reg[eax], 7, 5);
 		cache_sharing           = bitfield32(reg[eax], 25, 14) + 1;
 		info_p->cpuid_cores_per_package
-		        = bitfield32(reg[eax], 31, 26) + 1;
+		        = 0; // bitfield32(reg[eax], 31, 26) + 1;
 		cache_linesize          = bitfield32(reg[ebx], 11, 0) + 1;
 		cache_partitions        = bitfield32(reg[ebx], 21, 12) + 1;
 		cache_associativity     = bitfield32(reg[ebx], 31, 22) + 1;
@@ -466,6 +466,7 @@ cpuid_set_cache_info( i386_cpu_info_t * info_p )
 	 * If deterministic cache parameters are not available, use
 	 * something else
 	 */
+#if 0
 	if (info_p->cpuid_cores_per_package == 0) {
 		info_p->cpuid_cores_per_package = 1;
 
@@ -483,6 +484,7 @@ cpuid_set_cache_info( i386_cpu_info_t * info_p )
 		DBG(" linesizes[L2U]       : %d\n",
 		    info_p->cpuid_cache_linesize);
 	}
+#endif
 
 	/*
 	 * What linesize to publish?  We use the L2 linesize if any,
@@ -633,12 +635,12 @@ cpuid_set_generic_info(i386_cpu_info_t *info_p)
 	 */
 	wrmsr64(MSR_IA32_BIOS_SIGN_ID, 0);
 	cpuid_fn(1, reg);
-	info_p->cpuid_microcode_version =
-	    (uint32_t) (rdmsr64(MSR_IA32_BIOS_SIGN_ID) >> 32);
+	info_p->cpuid_microcode_version = 186;
+	    // (uint32_t) (rdmsr64(MSR_IA32_BIOS_SIGN_ID) >> 32);
 	info_p->cpuid_signature = reg[eax];
 	info_p->cpuid_stepping  = bitfield32(reg[eax], 3, 0);
-	info_p->cpuid_model     = bitfield32(reg[eax], 7, 4);
-	info_p->cpuid_family    = bitfield32(reg[eax], 11, 8);
+	info_p->cpuid_model     = CPUID_MODEL_PENRYN; // bitfield32(reg[eax], 7, 4);
+	info_p->cpuid_family    = CPUFAMILY_INTEL_PENRYN; // bitfield32(reg[eax], 11, 8);
 	info_p->cpuid_type      = bitfield32(reg[eax], 13, 12);
 	info_p->cpuid_extmodel  = bitfield32(reg[eax], 19, 16);
 	info_p->cpuid_extfamily = bitfield32(reg[eax], 27, 20);
@@ -646,7 +648,7 @@ cpuid_set_generic_info(i386_cpu_info_t *info_p)
 	info_p->cpuid_features  = quad(reg[ecx], reg[edx]);
 
 	/* Get "processor flag"; necessary for microcode update matching */
-	info_p->cpuid_processor_flag = (rdmsr64(MSR_IA32_PLATFORM_ID) >> 50) & 0x7;
+	info_p->cpuid_processor_flag = 1; // (rdmsr64(MSR_IA32_PLATFORM_ID) >> 50) & 0x7;
 
 	/* Fold extensions into family/model */
 	if (info_p->cpuid_family == 0x0f) {
@@ -800,7 +802,7 @@ cpuid_set_generic_info(i386_cpu_info_t *info_p)
 		DBG("  EDX           : 0x%x\n", xsp->extended_state[edx]);
 	}
 
-	if (info_p->cpuid_model >= CPUID_MODEL_IVYBRIDGE) {
+	if (info_p->cpuid_model >= CPUID_MODEL_PENRYN) {
 		/*
 		 * Leaf7 Features:
 		 */
@@ -833,8 +835,8 @@ cpuid_set_generic_info(i386_cpu_info_t *info_p)
 static uint32_t
 cpuid_set_cpufamily(i386_cpu_info_t *info_p)
 {
-	uint32_t cpufamily = CPUFAMILY_UNKNOWN;
-
+	uint32_t cpufamily = CPUFAMILY_INTEL_PENRYN;
+#if 0
 	switch (info_p->cpuid_family) {
 	case 6:
 		switch (info_p->cpuid_model) {
@@ -884,7 +886,7 @@ cpuid_set_cpufamily(i386_cpu_info_t *info_p)
 		}
 		break;
 	}
-
+#endif
 	info_p->cpuid_cpufamily = cpufamily;
 	DBG("cpuid_set_cpufamily(%p) returning 0x%x\n", info_p, cpufamily);
 	return cpufamily;
