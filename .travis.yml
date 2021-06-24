@@ -14,7 +14,7 @@ before_script:
   - export ARCHS="x86_64"
   - export SDKROOT="macosx10.14"
   - export ARCH_CONFIGS="X86_64"
-  - export KERNEL_CONFIGS="DEBUG"
+  - export KERNEL_CONFIGS="RELEASE"
   - export XCODE_APPLICATION_NAME="Xcode-10.3.app"
   - export COMMIT_SHA_SHORT="$(echo $TRAVIS_COMMIT | cut -c 1-7)"
   - export FILENAME_PUSH="$(echo xnu_build_$COMMIT_SHA_SHORT.zip)"
