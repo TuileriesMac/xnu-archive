@@ -1,0 +1,57 @@
+name: Build XNU release kernel
+
+on:
+  - push
+  - pull_request
+
+jobs:
+  build:
+      runs-on: macos-10.15
+      steps:
+        - name: Clone repository
+          uses: actions/checkout@v2
+          with:
+            submodules: 'true'
+        - name: Build dependencies
+          run: |
+            export XCODE_APPLICATION_NAME="Xcode_10.3.app"
+            sudo xcode-select -s "/Applications/${XCODE_APPLICATION_NAME}/Contents/Developer"
+            export FILE_LOCATION="README.md"
+            export SDKROOT="macosx10.14"
+            export SDKPATH="$(xcrun --sdk $SDKROOT --show-sdk-path)"
+            export ARCHS="x86_64"
+            export ARCH_CONFIGS="X86_64"
+            export KERNEL_CONFIGS="RELEASE"
+            export COMMIT_SHA_SHORT="$(echo $TRAVIS_COMMIT | cut -c 1-7)"
+            export FILENAME_PUSH="$(echo xnu_build_$COMMIT_SHA_SHORT.zip)"
+            export TOOLCHAINPATH="$(xcode-select -p)/Toolchains/XcodeDefault.xctoolchain"
+            brew install autoconf automake libtool p7zip
+            cd osfmk/udis86
+            ./autogen.sh
+            ./configure
+            make
+            cd ../..
+            cd dtrace
+            xcodebuild install -target ctfconvert -target ctfdump -target ctfmerge -UseModernBuildSystem=NO SRCROOT="${PWD}" OBJROOT="${PWD}/obj" SYMROOT="${PWD}/sym" DSTROOT="${PWD}/dst"
+            sudo ditto "${PWD}/dst/Applications/${XCODE_APPLICATION_NAME}/Contents/Developer/Toolchains/XcodeDefault.xctoolchain" "${TOOLCHAINPATH}"
+            cd ..
+            cd AvailabilityVersions
+            make install SRCROOT="${PWD}" DSTROOT="${PWD}/dst"
+            sudo ditto "${PWD}/dst/usr/local" "${SDKPATH}/usr/local"
+            cd ..
+            cd libplatform
+            sudo ditto "${PWD}/include" "${SDKPATH}/usr/local/include"
+            sudo ditto "${PWD}/private"  "${SDKPATH}/usr/local/include"
+            cd ..
+            make installhdrs SRCROOT="${PWD}" OBJROOT="${PWD}/BUILD.hdrs/obj" SYMROOT="${PWD}/BUILD.hdrs/sym" DSTROOT="${PWD}/BUILD.hdrs/dst"
+            xcodebuild installhdrs -project libsyscall/Libsyscall.xcodeproj -sdk "${SDKROOT}" -UseModernBuildSystem=NO SRCROOT="${PWD}/libsyscall" OBJROOT="${PWD}/BUILD.hdrs/obj" SYMROOT="${PWD}/BUILD.hdrs/sym" DSTROOT="${PWD}/BUILD.hdrs/dst"
+            sudo chown -R root:wheel BUILD.hdrs/dst/
+            sudo ditto BUILD.hdrs/dst "${SDKPATH}"
+            cd libdispatch
+            xcodebuild install -project libdispatch.xcodeproj -target libfirehose_kernel -sdk "${SDKROOT}" -UseModernBuildSystem=NO SRCROOT="${PWD}" OBJROOT="${PWD}/obj" SYMROOT="${PWD}/sym" DSTROOT="${PWD}/dst"
+            sudo ditto "${PWD}/dst/usr/local" "${SDKPATH}/usr/local"
+            cd ..
+        - name: Build XNU
+          run: |
+            mkdir "BUILD.syskext"
+            make DSTROOT="$PWD/BUILD.syskext" install_config
